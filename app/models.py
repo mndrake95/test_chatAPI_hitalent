@@ -17,14 +17,14 @@ class Chat(Base):
     __tablename__ = "chats"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.timezone.utc)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     messages: Mapped[list["Message"]] = relationship("Message", back_populates="chat", cascade="all, delete")
 
 class Message(Base):
     __tablename__ = "messages"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     text: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.timezone.utc)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     chat_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chats.id"))
     author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     chat: Mapped["Chat"] = relationship("Chat", back_populates="messages")

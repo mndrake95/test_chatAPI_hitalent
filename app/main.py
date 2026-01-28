@@ -30,3 +30,13 @@ async def create_user(user: schemas.UserCreate, db: AsyncSession = Depends(get_d
     await db.commit()
     await db.refresh(new_user)
     return new_user
+
+# Чаты
+
+@app.post("/chats/", response_model=schemas.ChatRead, status_code=201)
+async def create_chat(chat: schemas.ChatCreate, db: AsyncSession = Depends(get_db)):
+    new_chat = models.Chat(title=chat.title)
+    db.add(new_chat)
+    await db.commit()
+    await db.refresh(new_chat)
+    return new_chat
