@@ -7,7 +7,6 @@ import pytest
 import asyncio
 
 from httpx import AsyncClient, ASGITransport
-from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.pool import NullPool
@@ -17,15 +16,19 @@ from app.config import settings
 from app.main import app
 
 
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/test_db"
+TEST_DATABASE_URL = settings.DB_URL
 
 engine_test = create_async_engine(TEST_DATABASE_URL, poolclass=NullPool)
 
 TestingSessionLocal = async_sessionmaker(bind=engine_test, expire_on_commit=False)
 
+@pytest.fixture(scope="session")
+def anyio_backend():
+    """Указываем бэкенд для anyio."""
+    return "asyncio"
+
 @pytest.fixture(scope="session", autouse=True)
-async def prepare_database():
-    await asyncio.sleep(1)
+async def prepare_database(anyio_backend):
     async with engine_test.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
@@ -36,7 +39,7 @@ async def prepare_database():
         await conn.run_sync(Base.metadata.drop_all)
 
 @pytest.fixture(scope="function")
-async def session():
+async def session(anyio_backend) -> AsyncSession:
     async with engine_test.connect() as connection:
         async with connection.begin() as transaction:
             async with TestingSessionLocal(bind=connection) as session:
@@ -44,12 +47,12 @@ async def session():
             await transaction.rollback()
 
 @pytest.fixture(scope="function", autouse=True)
-async def client(session):
+async def client(session: AsyncSession, anyio_backend):
     async def _get_test_db():
         yield session
     app.dependency_overrides[get_db] = _get_test_db
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
         app.dependency_overrides.clear()
 
