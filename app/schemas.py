@@ -22,7 +22,9 @@ class MessageBase(BaseModel):
     text: str = Field(..., max_length=5000)
 
 class MessageCreate(MessageBase):
-    pass
+    chat_id: UUID4
+    author_id: UUID4
+
 
 class MessageRead(MessageBase):
     id: UUID4
