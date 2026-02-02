@@ -2,6 +2,8 @@ services:
   db:
     image: postgres:15
     container_name: chat_db_container
+    ports:               
+      - "5433:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -17,7 +19,7 @@ services:
     container_name: chat_tests
     environment:
       # Внутри сети Docker мы обращаемся к сервису 'db'
-      - DB_URL=${DB_URL_DOCKER}
+      - DB_URL=${DB_URL}
     depends_on:
       db:
         condition: service_healthy
