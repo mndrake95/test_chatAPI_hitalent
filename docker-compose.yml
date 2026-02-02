@@ -17,9 +17,9 @@ services:
   tests:
     build: .
     container_name: chat_tests
-    environment:
-      # Внутри сети Docker мы обращаемся к сервису 'db'
-      - DB_URL=${DB_URL}
+    # Загружаем переменные окружения, специфичные для Docker (используют хост 'db')
+    env_file:
+      - .env.docker
     depends_on:
       db:
         condition: service_healthy
