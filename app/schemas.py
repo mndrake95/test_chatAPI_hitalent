@@ -19,7 +19,7 @@ class UserRead(UserBase):
 # Схемы Сообщений
 
 class MessageBase(BaseModel):
-    text: str = Field(..., max_length=5000)
+    text: str = Field(..., min_length=1, max_length=5000)
 
 class MessageCreate(MessageBase):
     chat_id: UUID4
@@ -33,6 +33,9 @@ class MessageRead(MessageBase):
 
     class Config:
         from_attributes = True
+
+class MessageUpdate(MessageBase):
+    text: str = Field(..., min_length=1, max_length=5000)
 
 # Схемы Чатов
 
