@@ -68,7 +68,7 @@
 ### 1. Клонирование репозитория
 
 ```bash
-git clone (https://github.com/mndrake95/test_chatAPI_hitalent.git)
+git clone https://github.com/mndrake95/test_chatAPI_hitalent.git
 cd test_chat_api_hitalent
 
 ```
@@ -147,5 +147,6 @@ docker-compose up --build tests
 
 **Проблема:** Тесты часто падали при запуске через `docker-compose`, потому что контейнер с тестами стартовал быстрее, чем база данных успевала принять первое соединение.
 **Решение:** Я настроил **Healthcheck** для сервиса базы данных в `docker-compose.yml`. Теперь контейнер с тестами ожидает статус `service_healthy` от PostgreSQL, что гарантирует стабильность прохождения CI/CD цикла.
+
 
 
