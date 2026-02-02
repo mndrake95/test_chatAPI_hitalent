@@ -17,7 +17,7 @@ services:
     container_name: chat_tests
     environment:
       # Внутри сети Docker мы обращаемся к сервису 'db'
-      - DB_URL=postgresql+asyncpg://postgres:postgres@db:5432/chat_db
+      - DB_URL=${DB_URL_DOCKER}
     depends_on:
       db:
         condition: service_healthy
