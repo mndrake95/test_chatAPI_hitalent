@@ -46,7 +46,8 @@ async def create_chat(chat: schemas.ChatCreate, db: AsyncSession = Depends(get_d
     db.add(new_chat)
     await db.commit()
     await db.refresh(new_chat)
-    return new_chat
+    # return plain dict to avoid triggering lazy relationship loaders during serialization
+    return {"id": new_chat.id, "title": new_chat.title, "created_at": new_chat.created_at, "messages": []}
 
 @app.delete("/chats/{chat_id}", status_code=204)
 async def delete_chat(chat_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
@@ -61,28 +62,48 @@ async def delete_chat(chat_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
 
 # Сообщения
 
-@app.post("/messages/", response_model=schemas.MessageRead, status_code=201)
-async def create_message(message: schemas.MessageCreate, db: AsyncSession = Depends(get_db)):
-    new_message = models.Message(text=message.text, chat_id=message.chat_id, author_id=message.author_id)
-    query = select(models.Chat).where(models.Chat.id == message.chat_id)
-    result = await db.execute(query)
-    chat_exists = result.scalar_one_or_none()
-    if chat_exists is None:
+@app.post("/chats/{chat_id}/messages/", response_model=schemas.MessageRead, status_code=201)
+async def create_message(chat_id: uuid.UUID, message: schemas.MessageCreate, db: AsyncSession = Depends(get_db)):
+    chat_query = select(models.Chat).where(models.Chat.id == chat_id)
+    chat_result = await db.execute(chat_query)
+    if chat_result.scalar_one_or_none() is None:
         raise HTTPException(status_code=404, detail="Chat not found")
+    if str(message.chat_id) != str(chat_id):
+        raise HTTPException(status_code=400, detail="chat_id in body does not match path")
+    new_message = models.Message(
+        text=message.text,
+        chat_id=chat_id,
+        author_id=message.author_id
+    )
     db.add(new_message)
     await db.commit()
     await db.refresh(new_message)
-    return new_message   
+    return new_message
 
-@app.get("/chats/{chat_id}/messages", response_model=List[schemas.MessageRead], status_code=200)
-async def get_messages_by_chat_id(chat_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    query = select(models.Message).where(models.Message.chat_id == chat_id)
-    result = await db.execute(query)
-    messages = result.scalars().all()
-    chat_result = await db.execute(select(models.Chat).where(models.Chat.id == chat_id))
-    if chat_result.scalar_one_or_none() is None:
-        raise HTTPException(status_code=404, detail="Chat not found")    
-    return messages
+@app.get("/chats/{chat_id}", response_model=schemas.ChatRead)
+async def get_messages_by_chat_id(chat_id: uuid.UUID, limit: int = 20, db: AsyncSession = Depends(get_db)):
+    limit = min(limit, 100)
+
+    # Получаем чат
+    chat_query = select(models.Chat).where(models.Chat.id == chat_id)
+    chat_res = await db.execute(chat_query)
+    chat_obj = chat_res.scalar_one_or_none()
+    
+    if chat_obj is None:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    # Получаем последние сообщения (сортировка по созданию desc)
+    msg_query = (
+        select(models.Message)
+        .where(models.Message.chat_id == chat_id)
+        .order_by(models.Message.created_at.desc())
+        .limit(limit)
+    )
+    msg_res = await db.execute(msg_query)
+    messages = msg_res.scalars().all()
+
+    # Возвращаем словарь с сообщениями, чтобы избежать ленивой загрузки при сериализации
+    return {"id": chat_obj.id, "title": chat_obj.title, "created_at": chat_obj.created_at, "messages": messages}
 
 @app.patch("/messages/{message_id}", response_model=schemas.MessageRead, status_code=200)
 async def patch_message_by_message_id(message_id: uuid.UUID, message_update: schemas.MessageUpdate, db: AsyncSession = Depends(get_db)):

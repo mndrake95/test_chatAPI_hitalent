@@ -10,3 +10,4 @@ httpx==0.28.1
 anyio==3.7.1
 python-dotenv==1.2.1
 passlib
+alembic

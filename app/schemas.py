@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, UUID4, Field
+from pydantic import BaseModel, EmailStr, UUID4, Field, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 
@@ -19,6 +19,7 @@ class UserRead(UserBase):
 # Схемы Сообщений
 
 class MessageBase(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
     text: str = Field(..., min_length=1, max_length=5000)
 
 class MessageCreate(MessageBase):
@@ -40,7 +41,8 @@ class MessageUpdate(MessageBase):
 # Схемы Чатов
 
 class ChatBase(BaseModel):
-    title: str = Field(..., max_length=200)
+    model_config = ConfigDict(str_strip_whitespace=True)
+    title: str = Field(..., min_length=1, max_length=200)
 
 class ChatCreate(ChatBase):
     pass
@@ -48,6 +50,7 @@ class ChatCreate(ChatBase):
 class ChatRead(ChatBase):
     id: UUID4
     created_at: datetime
+    messages: List[MessageRead] = []
 
     class Config:
         from_attributes = True

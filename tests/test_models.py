@@ -28,7 +28,7 @@ async def test_create_message_success(client):
     author = await client.post("/users/", json={"username": "admin_test", "email": "admin@test.com", "password": "admin_password"})
     author_data = author.json()
     author_id = author_data["id"]
-    message = await client.post("/messages/", json={"text": "Hello test", "chat_id": chat_id, "author_id": author_id})
+    message = await client.post(f"/chats/{chat_id}/messages/", json={"text": "Hello test", "chat_id": chat_id, "author_id": author_id})
     assert message.status_code == 201
     message_data = message.json()
     print(f"\n[DB Check] Created Message: ID={message_data['id']}, Text='{message_data['text']}', CreatedAt={message_data.get('created_at')}, Chat ID={chat_id}, Author ID={author_id}")
@@ -39,7 +39,7 @@ async def test_create_message_fail_chat_not_found(client):
     author_data = author.json()
     author_id = author_data["id"]
     chat_id = str(uuid.uuid4())
-    message = await client.post("/messages/", json={"text": "Hello test", "chat_id": chat_id, "author_id": author_id})
+    message = await client.post(f"/chats/{chat_id}/messages/", json={"text": "Hello test", "chat_id": chat_id, "author_id": author_id})
     assert message.status_code == 404
     print(f"\n[Test Check] Status code is {message.status_code}")
 
@@ -51,7 +51,7 @@ async def test_delete_chat_cascade(client, session):
     author = await client.post("/users/", json={"username": "admin_test", "email": "admin@test.com", "password": "admin_password"})
     author_data = author.json()
     author_id = author_data["id"]
-    message = await client.post("/messages/", json={"text": "Hello test", "chat_id": chat_id, "author_id": author_id})
+    message = await client.post(f"/chats/{chat_id}/messages/", json={"text": "Hello test", "chat_id": chat_id, "author_id": author_id})
     message_data = message.json()
     message_id = message_data["id"]
     response = await client.delete(f"/chats/{chat_id}")
@@ -70,7 +70,7 @@ async def test_create_message_empty_text_fail(client):
     author = await client.post("/users/", json={"username": "admin_test", "email": "admin@test.com", "password": "admin_password"})
     author_data = author.json()
     author_id = author_data["id"]
-    message = await client.post("/messages/", json={"text": "", "chat_id": chat_id, "author_id": author_id})
+    message = await client.post(f"/chats/{chat_id}/messages/", json={"text": "", "chat_id": chat_id, "author_id": author_id})
     assert message.status_code == 422
     print(f"\n[Test Check] Can`t post empty message")
 
@@ -82,22 +82,23 @@ async def test_get_messages_success(client):
     author = await client.post("/users/", json={"username": "admin_test", "email": "admin@test.com", "password": "admin_password"})
     author_data = author.json()
     author_id = author_data["id"]
-    message_1 = await client.post("/messages/", json={"text": "First message", "chat_id": chat_id, "author_id": author_id})
-    message_2 = await client.post("/messages/", json={"text": "Second message", "chat_id": chat_id, "author_id": author_id})
-    all_messages = await client.get(f"/chats/{chat_id}/messages")
+    message_1 = await client.post(f"/chats/{chat_id}/messages/", json={"text": "First message", "chat_id": chat_id, "author_id": author_id})
+    message_2 = await client.post(f"/chats/{chat_id}/messages/", json={"text": "Second message", "chat_id": chat_id, "author_id": author_id})
+    all_messages = await client.get(f"/chats/{chat_id}")
     assert all_messages.status_code == 200
-    assert len(all_messages.json()) == 2
-    print(f"\n[Test Check] There are {len(all_messages.json())} messages in chat {chat_id}")
+    msgs = all_messages.json().get("messages", [])
+    assert len(msgs) == 2
+    print(f"\n[Test Check] There are {len(msgs)} messages in chat {chat_id}")
 
 @pytest.mark.anyio
-async def test_patch_mesage(client):
+async def test_patch_message(client):
     chat = await client.post("/chats/", json={"title": "My TDD Chat"})
     chat_data = chat.json()
     chat_id = chat_data["id"]
     author = await client.post("/users/", json={"username": "admin_test", "email": "admin@test.com", "password": "admin_password"})
     author_data = author.json()
     author_id = author_data["id"]
-    message = await client.post("/messages/", json={"text": "wrong text", "chat_id": chat_id, "author_id": author_id})
+    message = await client.post(f"/chats/{chat_id}/messages/", json={"text": "wrong text", "chat_id": chat_id, "author_id": author_id})
     message_data = message.json()
     message_id = message_data["id"]
     response = await client.patch(f"/messages/{message_id}", json={"text": "Right text"})
