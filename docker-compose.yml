@@ -20,7 +20,7 @@ services:
     container_name: chat_tests
     # Загружаем переменные окружения, специфичные для Docker (используют хост 'db')
     env_file:
-      - .env.docker
+      - .env.example
     depends_on:
       db:
         condition: service_healthy
