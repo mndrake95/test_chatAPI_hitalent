@@ -72,18 +72,13 @@ git clone https://github.com/mndrake95/test_chatAPI_hitalent.git
 cd test_chatAPI_hitalent
 ```
 
-Создайте файл `.env` из примера:
+Создайте файл `.env` вручную (не храните его в репозитории).
 
-```bash
-cp .env.example .env
-```
 
 Если вы запускаете проект или тесты в Docker — создайте файл `.env.docker` вручную. В репозитории присутствует шаблон `./.env.docker.example` — скопируйте его и при необходимости отредактируйте:
 
 ```bash
 cp .env.docker.example .env.docker
-# или
-# echo 'DB_URL=postgresql+asyncpg://postgres:postgres@db:5432/chat_db' > .env.docker
 ```
 
 ### 2. Запуск приложения
@@ -116,17 +111,8 @@ docker-compose up --abort-on-container-exit --exit-code-from tests tests
 - `./.env` — для локального запуска (не коммитится, уже указан в `.gitignore`).
 - `./.env.docker` — для `docker-compose` (используется сервисом `tests` через `env_file`). Этот файл не хранится в репозитории (добавлен в `.gitignore`); создайте его вручную при необходимости (пример содержимого ниже).
 
-Примеры:
+Примечание: не храните реальные значения в README. Создайте `./.env` с переменной `DB_URL` для локальной разработки (используйте хост `localhost:5433`). Для Docker создайте `./.env.docker` и укажите `DB_URL`, используя `db:5432` как хост внутри Docker-сети.
 
-```
-# .env (локально)
-DB_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/chat_db
-```
-
-```
-# .env.docker (для docker-compose)
-DB_URL=postgresql+asyncpg://postgres:postgres@db:5432/chat_db
-```
 
 ### Запуск сервера локально (разработка) 🚀
 
